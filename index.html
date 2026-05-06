@@ -332,6 +332,7 @@
     <h1>Piso de la Abuela</h1>
     <p>¿Cómo te llamas?<br>Así sabremos quién ha reservado cada día.</p>
     <input type="text" id="name-input" placeholder="Tu nombre..." maxlength="20" autocomplete="off" />
+    <input type="password" id="pin-input" placeholder="PIN de 4 dígitos (solo tú lo sabrás)" maxlength="4" pattern="[0-9]*" inputmode="numeric" />
     <button class="btn-primary" onclick="entrar()">Entrar al calendario</button>
     <button class="btn-admin-link" onclick="abrirAdmin()">⚙️ Acceso administrador</button>
   </div>
@@ -445,6 +446,7 @@ const COLORES = ['#c4714a','#5a7a5e','#7b68c8','#c47a9a','#4a8fa8','#d4a843','#8
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 let userName = '';
+let userPin = '';
 let viewYear = new Date().getFullYear();
 let viewMonth = new Date().getMonth();
 let reservas = {};
@@ -539,6 +541,19 @@ async function addReservas(fechas, nombre) {
 }
 
 async function deleteReserva(fecha, nombre) {
+  // Verificar PIN antes de cancelar
+  const pinKey = 'pin-' + nombre.trim().toLowerCase();
+  const storedPin = localStorage.getItem(pinKey);
+  const pinIntroducido = prompt('Introduce tu PIN de 4 dígitos para cancelar la reserva:');
+  if (!pinIntroducido) return;
+  if (storedPin && pinIntroducido !== storedPin) {
+    showToast('❌ PIN incorrecto');
+    return;
+  }
+  if (!storedPin && pinIntroducido !== userPin) {
+    showToast('❌ PIN incorrecto');
+    return;
+  }
   showSpinner('Cancelando reserva...');
   try {
     await callScript({ action: 'delete', fecha, nombre });
@@ -553,21 +568,55 @@ async function deleteReserva(fecha, nombre) {
 // ── INICIO ─────────────────────────────────────────────
 function entrar() {
   const input = document.getElementById('name-input');
+  const pinInput = document.getElementById('pin-input');
   const name = input.value.trim();
+  const pin = pinInput.value.trim();
   if (!name) { input.focus(); input.style.borderColor = 'var(--terracota)'; return; }
+  if (!pin || pin.length < 4 || !/^\d{4}$/.test(pin)) {
+    pinInput.focus(); pinInput.style.borderColor = 'var(--terracota)';
+    showToast('El PIN debe ser de 4 dígitos');
+    return;
+  }
   userName = name;
+  userPin = pin;
   localStorage.setItem('piso-abuela-nombre', name);
+  // Guardar PIN hasheado localmente
+  const pinKey = 'pin-' + name.trim().toLowerCase();
+  const storedPin = localStorage.getItem(pinKey);
+  if (storedPin && storedPin !== pin) {
+    pinInput.style.borderColor = 'var(--terracota)';
+    showToastWelcome('PIN incorrecto para este nombre');
+    return;
+  }
+  localStorage.setItem(pinKey, pin);
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   actualizarHeader();
   cargarReservas();
 }
 
+function showToastWelcome(msg) {
+  // Toast en pantalla de bienvenida
+  let t = document.getElementById('toast-welcome');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-welcome';
+    t.style.cssText = 'margin-top:0.8rem;color:#c0392b;font-size:0.85rem;';
+    document.querySelector('.welcome-card').appendChild(t);
+  }
+  t.textContent = msg;
+}
+
 document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
 document.getElementById('admin-pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') verificarAdmin(); });
 
 const nombreGuardado = localStorage.getItem('piso-abuela-nombre');
-if (nombreGuardado) document.getElementById('name-input').value = nombreGuardado;
+if (nombreGuardado) {
+  document.getElementById('name-input').value = nombreGuardado;
+  const pinGuardado = localStorage.getItem('pin-' + nombreGuardado.trim().toLowerCase());
+  if (pinGuardado) document.getElementById('pin-input').value = pinGuardado;
+}
 
 function cambiarNombre() {
   const nuevo = prompt('¿Cuál es tu nombre?', userName);
