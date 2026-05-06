@@ -200,6 +200,27 @@
   #fab.active { display: flex; }
   #fab:hover { background: #4a6850; transform: translateX(-50%) translateY(-2px); }
 
+  /* ADMIN TABS */
+  .admin-tab {
+    flex: 1; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 8px;
+    background: white; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 500; color: var(--text-light); transition: all 0.15s;
+  }
+  .admin-tab.active { background: var(--terracota); color: white; border-color: var(--terracota); }
+  .admin-reserva-row {
+    display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem;
+    border-radius: 9px; margin-bottom: 0.35rem; background: var(--cream);
+  }
+  .admin-reserva-row .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .admin-reserva-row .info { flex: 1; font-size: 0.85rem; }
+  .admin-reserva-row .info strong { display: block; }
+  .admin-reserva-row .info span { color: var(--text-light); font-size: 0.78rem; }
+  .admin-del-btn {
+    background: none; border: 1px solid #ddd; border-radius: 6px; padding: 3px 8px;
+    font-size: 0.8rem; cursor: pointer; color: #c0392b; transition: all 0.15s; flex-shrink: 0;
+  }
+  .admin-del-btn:hover { background: #c0392b; color: white; border-color: #c0392b; }
+
   /* PANEL ADMIN */
   #admin-panel {
     position: fixed; inset: 0; background: rgba(42,31,20,0.5); backdrop-filter: blur(4px);
@@ -401,15 +422,30 @@
       <button class="btn-primary" onclick="verificarAdmin()">Entrar</button>
     </div>
     <div id="admin-content" style="display:none">
-      <div class="admin-year">
-        <button onclick="cambiarAnioAdmin(-1)">‹</button>
-        <span id="admin-year-label">2026</span>
-        <button onclick="cambiarAnioAdmin(1)">›</button>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1.2rem;">
+        <button class="admin-tab active" id="tab-meses" onclick="switchTab('meses')">📅 Meses</button>
+        <button class="admin-tab" id="tab-reservas" onclick="switchTab('reservas')">🗑️ Reservas</button>
       </div>
-      <div class="months-grid" id="months-grid"></div>
-      <div class="admin-actions">
-        <button class="btn-admin-close" onclick="cerrarAdmin()">Cancelar</button>
-        <button class="btn-admin-save" onclick="guardarAdmin()">Guardar</button>
+
+      <div id="admin-meses-panel">
+        <div class="admin-year">
+          <button onclick="cambiarAnioAdmin(-1)">‹</button>
+          <span id="admin-year-label">2026</span>
+          <button onclick="cambiarAnioAdmin(1)">›</button>
+        </div>
+        <div class="months-grid" id="months-grid"></div>
+        <div class="admin-actions">
+          <button class="btn-admin-close" onclick="cerrarAdmin()">Cancelar</button>
+          <button class="btn-admin-save" onclick="guardarAdmin()">Guardar</button>
+        </div>
+      </div>
+
+      <div id="admin-reservas-panel" style="display:none">
+        <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:1rem;">Pulsa × para eliminar cualquier reserva como administrador.</p>
+        <div id="admin-reservas-list"></div>
+        <div class="admin-actions" style="margin-top:1rem;">
+          <button class="btn-admin-close" onclick="cerrarAdmin()">Cerrar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -884,6 +920,56 @@ function guardarAdmin() {
   cerrarAdmin();
   renderCalendar();
   showToast('✓ Meses actualizados');
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-meses').classList.toggle('active', tab === 'meses');
+  document.getElementById('tab-reservas').classList.toggle('active', tab === 'reservas');
+  document.getElementById('admin-meses-panel').style.display = tab === 'meses' ? 'block' : 'none';
+  document.getElementById('admin-reservas-panel').style.display = tab === 'reservas' ? 'block' : 'none';
+  if (tab === 'reservas') renderAdminReservas();
+}
+
+function renderAdminReservas() {
+  const list = document.getElementById('admin-reservas-list');
+  const todasReservas = [];
+  Object.entries(reservas).forEach(([fecha, lista]) => {
+    lista.forEach(r => todasReservas.push({ fecha, nombre: r.nombre }));
+  });
+  todasReservas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  if (todasReservas.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:var(--text-light);font-size:0.88rem;padding:1rem 0">No hay reservas activas</p>';
+    return;
+  }
+
+  list.innerHTML = todasReservas.map(r => {
+    const partes = r.fecha.split('-');
+    const fechaLegible = partes[2] + '/' + partes[1] + '/' + partes[0];
+    return '<div class="admin-reserva-row">'
+      + '<div class="dot" style="background:' + getColor(r.nombre) + '"></div>'
+      + '<div class="info"><strong>' + r.nombre + '</strong><span>' + fechaLegible + '</span></div>'
+      + '<button class="admin-del-btn" onclick="adminBorrarReserva('' + r.fecha + '','' + r.nombre + '')">× Borrar</button>'
+      + '</div>';
+  }).join('');
+}
+
+async function adminBorrarReserva(fecha, nombre) {
+  if (!confirm('¿Borrar la reserva de ' + nombre + ' el ' + fecha + '?')) return;
+  cerrarAdmin();
+  await deleteReservaDirecta(fecha, nombre);
+  showToast('✓ Reserva eliminada');
+}
+
+async function deleteReservaDirecta(fecha, nombre) {
+  showSpinner('Eliminando reserva...');
+  try {
+    await callScript({ action: 'delete', fecha, nombre });
+    await cargarReservas();
+  } catch(e) {
+    hideSpinner();
+    showToast('⚠️ Error al eliminar');
+  }
 }
 
 document.getElementById('admin-panel').addEventListener('click', function(e) {
