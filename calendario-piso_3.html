@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piso de la Abuela 🏠</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #faf6f0;
+    --warm: #f0e8d8;
+    --terracota: #c4714a;
+    --terracota-dark: #a05a38;
+    --verde: #5a7a5e;
+    --text: #2a1f14;
+    --text-light: #7a6a58;
+    --border: #ddd0c0;
+    --shadow: rgba(42,31,20,0.08);
+    --select: rgba(196,113,74,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(196,113,74,0.03) 40px, rgba(196,113,74,0.03) 41px),
+      repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(90,122,94,0.03) 40px, rgba(90,122,94,0.03) 41px);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* BIENVENIDA */
+  #welcome-screen {
+    position: fixed; inset: 0; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; z-index: 100; padding: 2rem;
+  }
+  .welcome-card {
+    background: white; border: 1.5px solid var(--border); border-radius: 24px;
+    padding: 3rem 2.5rem; max-width: 420px; width: 100%; text-align: center;
+    box-shadow: 0 8px 40px var(--shadow); position: relative; overflow: hidden;
+  }
+  .welcome-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, var(--terracota), var(--verde)); border-radius: 24px 24px 0 0;
+  }
+  .welcome-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+  .welcome-card h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .welcome-card p { color: var(--text-light); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5; }
+  .welcome-card input {
+    width: 100%; padding: 0.9rem 1.2rem; border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--text); background: var(--cream);
+    outline: none; transition: border-color 0.2s; margin-bottom: 0.8rem;
+  }
+  .welcome-card input:focus { border-color: var(--terracota); }
+  .btn-primary {
+    width: 100%; padding: 0.9rem; background: var(--terracota); color: white; border: none;
+    border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+    cursor: pointer; transition: background 0.2s; margin-bottom: 0.6rem;
+  }
+  .btn-primary:hover { background: var(--terracota-dark); }
+  .btn-admin-link {
+    background: none; border: none; color: var(--text-light); font-size: 0.78rem;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; padding: 0.3rem;
+  }
+
+  /* APP */
+  #app { position: relative; z-index: 1; display: none; }
+  header {
+    background: white; border-bottom: 1.5px solid var(--border); padding: 1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px var(--shadow);
+  }
+  .header-left h1 { font-family: 'Playfair Display', serif; font-size: 1.3rem; }
+  .header-left span { font-size: 0.75rem; color: var(--text-light); display: block; }
+  .header-right { display: flex; align-items: center; gap: 0.6rem; }
+  .user-badge {
+    display: flex; align-items: center; gap: 0.5rem; background: var(--warm);
+    border: 1.5px solid var(--border); border-radius: 50px; padding: 0.4rem 0.9rem 0.4rem 0.5rem;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .user-badge:hover { background: var(--border); }
+  .user-avatar {
+    width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 0.75rem; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .user-badge span { font-size: 0.82rem; font-weight: 500; }
+  .btn-admin-header {
+    background: var(--warm); border: 1.5px solid var(--border); border-radius: 50px;
+    padding: 0.4rem 0.8rem; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    color: var(--text-light); transition: all 0.2s;
+  }
+  .btn-admin-header:hover { background: var(--terracota); color: white; border-color: var(--terracota); }
+
+  /* CONTROLES */
+  .controls {
+    padding: 1.2rem 1.5rem 0.5rem; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;
+  }
+  .month-nav { display: flex; align-items: center; gap: 0.8rem; }
+  .month-nav button {
+    width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border);
+    background: white; cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .month-nav button:hover { background: var(--terracota); color: white; border-color: var(--terracota); }
+  .month-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; min-width: 160px; text-align: center; text-transform: capitalize; }
+  .btn-refresh {
+    padding: 0.45rem 0.9rem; border: 1.5px solid var(--border); border-radius: 50px;
+    background: white; cursor: pointer; font-size: 0.8rem; font-family: 'DM Sans', sans-serif;
+    color: var(--text-light); transition: all 0.2s;
+  }
+  .btn-refresh:hover { border-color: var(--verde); color: var(--verde); }
+
+  /* BARRA SELECCIÓN MÚLTIPLE */
+  #selection-bar {
+    display: none; position: sticky; top: 65px; z-index: 40;
+    background: var(--terracota); color: white; padding: 0.75rem 1.5rem;
+    align-items: center; justify-content: space-between; gap: 1rem;
+    box-shadow: 0 2px 12px rgba(196,113,74,0.3);
+  }
+  #selection-bar.active { display: flex; }
+  #selection-bar span { font-size: 0.9rem; font-weight: 500; }
+  .selection-actions { display: flex; gap: 0.6rem; }
+  .btn-sel {
+    padding: 0.4rem 1rem; border-radius: 50px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-sel-confirm { background: white; color: var(--terracota); }
+  .btn-sel-confirm:hover { background: var(--warm); }
+  .btn-sel-cancel { background: rgba(255,255,255,0.2); color: white; }
+  .btn-sel-cancel:hover { background: rgba(255,255,255,0.35); }
+
+  /* MES BLOQUEADO */
+  .mes-bloqueado-banner {
+    margin: 0 1.5rem 1rem; padding: 0.9rem 1.2rem; background: rgba(196,113,74,0.08);
+    border: 1.5px solid var(--terracota); border-radius: 12px; text-align: center;
+    font-size: 0.88rem; color: var(--terracota-dark); display: none;
+  }
+
+  /* LEYENDA */
+  .legend { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0 1.5rem 0.8rem; }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.4rem; background: white;
+    border: 1.5px solid var(--border); border-radius: 50px; padding: 0.25rem 0.7rem 0.25rem 0.35rem;
+    font-size: 0.78rem; font-weight: 500;
+  }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* CALENDARIO */
+  .calendar-wrap { padding: 0 1.5rem 6rem; }
+  .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px; }
+  .weekday {
+    text-align: center; font-size: 0.68rem; font-weight: 500; color: var(--text-light);
+    padding: 0.4rem 0; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .day-cell {
+    background: white; border: 1.5px solid var(--border); border-radius: 9px;
+    min-height: 82px; padding: 0.35rem; cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; user-select: none;
+  }
+  .day-cell:hover:not(.empty):not(.past):not(.blocked) {
+    border-color: var(--terracota); box-shadow: 0 2px 8px rgba(196,113,74,0.15);
+  }
+  .day-cell.selected {
+    border-color: var(--terracota) !important;
+    background: var(--select) !important;
+    box-shadow: 0 0 0 2px var(--terracota);
+  }
+  .day-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+  .day-cell.past { opacity: 0.4; cursor: default; }
+  .day-cell.blocked { opacity: 0.35; cursor: not-allowed; background: #f5f5f5; }
+  .day-cell.today { border-color: var(--terracota); background: rgba(196,113,74,0.04); }
+  .day-number { font-size: 0.8rem; font-weight: 500; color: var(--text-light); line-height: 1; margin-bottom: 0.25rem; }
+  .day-cell.today .day-number {
+    background: var(--terracota); color: white; width: 20px; height: 20px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem;
+  }
+  .day-cell.selected .day-number { color: var(--terracota-dark); font-weight: 700; }
+  .reservas-list { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .reserva-chip {
+    border-radius: 4px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; color: white;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.45;
+    display: flex; align-items: center; justify-content: space-between; gap: 2px;
+  }
+  .reserva-chip .chip-name { overflow: hidden; text-overflow: ellipsis; }
+  .reserva-chip .chip-del {
+    opacity: 0; cursor: pointer; font-size: 0.65rem; flex-shrink: 0; transition: opacity 0.15s;
+    background: rgba(0,0,0,0.2); border-radius: 3px; padding: 0 2px; line-height: 1.3;
+  }
+  .reserva-chip:hover .chip-del { opacity: 1; }
+
+  /* BOTÓN FLOTANTE RESERVAR */
+  #fab {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--verde); color: white; border: none; border-radius: 50px;
+    padding: 0.85rem 2rem; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(90,122,94,0.4); z-index: 45;
+    display: none; align-items: center; gap: 0.5rem; transition: all 0.2s; white-space: nowrap;
+  }
+  #fab.active { display: flex; }
+  #fab:hover { background: #4a6850; transform: translateX(-50%) translateY(-2px); }
+
+  /* PANEL ADMIN */
+  #admin-panel {
+    position: fixed; inset: 0; background: rgba(42,31,20,0.5); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 400; padding: 1rem;
+  }
+  #admin-panel.active { display: flex; }
+  .admin-card {
+    background: white; border-radius: 20px; padding: 2rem; max-width: 480px; width: 100%;
+    box-shadow: 0 20px 60px rgba(42,31,20,0.25); max-height: 85vh; overflow-y: auto;
+  }
+  .admin-card h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 0.4rem; }
+  .admin-card .admin-sub { color: var(--text-light); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .admin-password-wrap input {
+    width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s; margin-bottom: 0.6rem;
+  }
+  .admin-password-wrap input:focus { border-color: var(--terracota); }
+  .admin-year { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+  .admin-year span { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
+  .admin-year button {
+    border: 1.5px solid var(--border); background: white; border-radius: 8px;
+    padding: 0.3rem 0.7rem; cursor: pointer; font-size: 0.9rem; transition: all 0.15s;
+  }
+  .admin-year button:hover { background: var(--warm); }
+  .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 1.5rem; }
+  .month-toggle {
+    border: 1.5px solid var(--border); border-radius: 10px; padding: 0.6rem 0.4rem;
+    text-align: center; cursor: pointer; font-size: 0.82rem; font-weight: 500;
+    transition: all 0.15s; background: white; font-family: 'DM Sans', sans-serif; color: var(--text-light);
+  }
+  .month-toggle.active { background: var(--verde); color: white; border-color: var(--verde); }
+  .month-toggle:hover:not(.active) { background: var(--warm); }
+  .admin-actions { display: flex; gap: 0.8rem; }
+  .btn-admin-save {
+    flex: 2; padding: 0.8rem; background: var(--terracota); color: white; border: none;
+    border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+  }
+  .btn-admin-save:hover { background: var(--terracota-dark); }
+  .btn-admin-close {
+    flex: 1; padding: 0.8rem; border: 1.5px solid var(--border); border-radius: 10px;
+    background: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+  }
+  .btn-admin-close:hover { background: var(--warm); }
+  .admin-error { color: #c0392b; font-size: 0.82rem; margin-top: 0.3rem; display: none; }
+
+  /* SPINNER */
+  .spinner-overlay {
+    position: fixed; inset: 0; background: rgba(250,246,240,0.8);
+    display: none; align-items: center; justify-content: center; z-index: 300;
+  }
+  .spinner-box { text-align: center; }
+  .spinner {
+    width: 38px; height: 38px; border: 3px solid var(--border);
+    border-top-color: var(--terracota); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 0.8rem;
+  }
+  .spinner-msg { font-size: 0.85rem; color: var(--text-light); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL DÍA */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(42,31,20,0.4); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+    padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: all; }
+  .modal {
+    background: white; border-radius: 20px; padding: 1.8rem; max-width: 360px; width: 100%;
+    box-shadow: 0 20px 60px rgba(42,31,20,0.2); transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.active .modal { transform: translateY(0); }
+  .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.25rem; margin-bottom: 0.3rem; }
+  .modal .date-label { color: var(--text-light); font-size: 0.85rem; margin-bottom: 1.3rem; }
+  .modal-reservas { margin-bottom: 1.3rem; }
+  .modal-reserva-item {
+    display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem;
+    border-radius: 9px; margin-bottom: 0.35rem; background: var(--cream);
+  }
+  .modal-reserva-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .modal-reserva-item .name { font-size: 0.88rem; font-weight: 500; flex: 1; }
+  .modal-reserva-item .del-btn {
+    background: none; border: 1px solid #ddd; border-radius: 6px; padding: 2px 7px;
+    font-size: 0.72rem; cursor: pointer; color: #c0392b; transition: all 0.15s;
+  }
+  .modal-reserva-item .del-btn:hover { background: #c0392b; color: white; border-color: #c0392b; }
+  .modal-actions { display: flex; gap: 0.7rem; }
+  .btn-cancel {
+    flex: 1; padding: 0.7rem; border: 1.5px solid var(--border); border-radius: 10px;
+    background: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  }
+  .btn-cancel:hover { background: var(--warm); }
+  .btn-reservar {
+    flex: 2; padding: 0.7rem; background: var(--verde); color: white; border: none;
+    border-radius: 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+  }
+  .btn-reservar:hover { background: #4a6850; }
+  .btn-reservar:disabled { background: #ccc; cursor: default; }
+  .ya-reservado {
+    background: rgba(196,113,74,0.1); border: 1px solid var(--terracota); border-radius: 8px;
+    padding: 0.55rem 0.75rem; font-size: 0.82rem; color: var(--terracota-dark); margin-bottom: 0.9rem; text-align: center;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: white; padding: 0.65rem 1.4rem; border-radius: 50px;
+    font-size: 0.88rem; opacity: 0; transition: all 0.3s; z-index: 500; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    header { padding: 0.9rem 1rem; }
+    .controls { padding: 1rem 1rem 0.4rem; }
+    .legend { padding: 0 1rem 0.7rem; }
+    .calendar-wrap { padding: 0 1rem 6rem; }
+    .day-cell { min-height: 68px; padding: 0.28rem; border-radius: 7px; }
+    .month-title { font-size: 1.1rem; min-width: 130px; }
+  }
+  @media (max-width: 380px) {
+    .day-cell { min-height: 54px; }
+    .reserva-chip .chip-del { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BIENVENIDA -->
+<div id="welcome-screen">
+  <div class="welcome-card">
+    <div class="welcome-icon">🏠</div>
+    <h1>Piso de la Abuela</h1>
+    <p>¿Cómo te llamas?<br>Así sabremos quién ha reservado cada día.</p>
+    <input type="text" id="name-input" placeholder="Tu nombre..." maxlength="20" autocomplete="off" />
+    <button class="btn-primary" onclick="entrar()">Entrar al calendario</button>
+    <button class="btn-admin-link" onclick="abrirAdmin()">⚙️ Acceso administrador</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <h1>🏠 Piso de la Abuela</h1>
+      <span>Pulsa un día o selecciona varios</span>
+    </div>
+    <div class="header-right">
+      <button class="btn-admin-header" onclick="abrirAdmin()">⚙️</button>
+      <div class="user-badge" onclick="cambiarNombre()">
+        <div class="user-avatar" id="header-avatar">?</div>
+        <span id="header-name">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA SELECCIÓN -->
+  <div id="selection-bar">
+    <span id="selection-label">0 días seleccionados</span>
+    <div class="selection-actions">
+      <button class="btn-sel btn-sel-cancel" onclick="cancelarSeleccion()">✕ Cancelar</button>
+      <button class="btn-sel btn-sel-confirm" onclick="reservarSeleccion()">✓ Reservar todos</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="month-nav">
+      <button onclick="cambiarMes(-1)">‹</button>
+      <div class="month-title" id="month-title"></div>
+      <button onclick="cambiarMes(1)">›</button>
+    </div>
+    <button class="btn-refresh" onclick="cargarReservas()">↻ Actualizar</button>
+  </div>
+
+  <div class="mes-bloqueado-banner" id="mes-bloqueado-banner">
+    🔒 Este mes aún no está disponible para reservas
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="calendar-wrap">
+    <div class="weekdays">
+      <div class="weekday">Lun</div><div class="weekday">Mar</div><div class="weekday">Mié</div>
+      <div class="weekday">Jue</div><div class="weekday">Vie</div><div class="weekday">Sáb</div><div class="weekday">Dom</div>
+    </div>
+    <div class="days-grid" id="days-grid"></div>
+  </div>
+</div>
+
+<!-- BOTÓN FLOTANTE -->
+<button id="fab" onclick="reservarSeleccion()">✓ Reservar días seleccionados</button>
+
+<!-- PANEL ADMIN -->
+<div id="admin-panel">
+  <div class="admin-card">
+    <h2>⚙️ Administración</h2>
+    <p class="admin-sub">Activa los meses disponibles para reservar.</p>
+    <div id="admin-login-wrap" class="admin-password-wrap">
+      <input type="password" id="admin-pass-input" placeholder="Contraseña..." />
+      <div class="admin-error" id="admin-error">Contraseña incorrecta</div>
+      <button class="btn-primary" onclick="verificarAdmin()">Entrar</button>
+    </div>
+    <div id="admin-content" style="display:none">
+      <div class="admin-year">
+        <button onclick="cambiarAnioAdmin(-1)">‹</button>
+        <span id="admin-year-label">2026</span>
+        <button onclick="cambiarAnioAdmin(1)">›</button>
+      </div>
+      <div class="months-grid" id="months-grid"></div>
+      <div class="admin-actions">
+        <button class="btn-admin-close" onclick="cerrarAdmin()">Cancelar</button>
+        <button class="btn-admin-save" onclick="guardarAdmin()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SPINNER -->
+<div class="spinner-overlay" id="spinner">
+  <div class="spinner-box">
+    <div class="spinner"></div>
+    <div class="spinner-msg" id="spinner-msg">Guardando...</div>
+  </div>
+</div>
+
+<!-- MODAL DÍA INDIVIDUAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <h2 id="modal-title">Día</h2>
+    <div class="date-label" id="modal-date"></div>
+    <div id="modal-ya-reservado"></div>
+    <div class="modal-reservas" id="modal-reservas"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal()">Cerrar</button>
+      <button class="btn-reservar" id="btn-reservar" onclick="confirmarReserva()">✓ Reservar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd_Z1PvypVWhmeQekL8K-m8G8g8CXbKS1vpF9jwlU4DN3peGs3OkcPsmIlX8fPOlJf/exec';
+const ADMIN_PASS = 'abuela2026';
+const COLORES = ['#c4714a','#5a7a5e','#7b68c8','#c47a9a','#4a8fa8','#d4a843','#8b6f5e','#5e8b6f','#a84a6b','#4a6ba8','#8bc47a','#c4a47a'];
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+let userName = '';
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth();
+let reservas = {};
+let userColorMap = {};
+let selectedDay = null;
+let diasSeleccionados = new Set();
+let modoSeleccion = false;
+let adminYear = new Date().getFullYear();
+let mesesActivos = JSON.parse(localStorage.getItem('piso-abuela-meses') || '{}');
+
+// Mes actual activo por defecto
+const hoy = new Date();
+const keyHoy = hoy.getFullYear() + '-' + hoy.getMonth();
+if (Object.keys(mesesActivos).length === 0) mesesActivos[keyHoy] = true;
+
+function mesClave(y, m) { return y + '-' + m; }
+function mesActivo(y, m) { return !!mesesActivos[mesClave(y, m)]; }
+
+function getColor(name) {
+  const key = name.trim().toLowerCase();
+  if (!userColorMap[key]) {
+    const used = Object.values(userColorMap);
+    const available = COLORES.filter(c => !used.includes(c));
+    userColorMap[key] = available.length ? available[0] : COLORES[Object.keys(userColorMap).length % COLORES.length];
+  }
+  return userColorMap[key];
+}
+
+function showSpinner(msg) {
+  document.getElementById('spinner-msg').textContent = msg || 'Cargando...';
+  document.getElementById('spinner').style.display = 'flex';
+}
+function hideSpinner() { document.getElementById('spinner').style.display = 'none'; }
+
+// ── API ────────────────────────────────────────────────
+async function cargarReservas() {
+  showSpinner('Cargando reservas...');
+  try {
+    const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
+    const rows = await res.json();
+    reservas = {};
+    userColorMap = {};
+    rows.forEach(r => {
+      let fecha = r.Fecha || r.fecha || '';
+      const nombre = r.Nombre || r.nombre || '';
+      if (!nombre) return;
+      // Normalizar fecha: si viene como ISO (2026-05-05T22:00:00.000Z) extraer solo la parte de fecha
+      if (fecha && fecha.includes('T')) {
+        // Ajustar zona horaria: las fechas de Google Sheets vienen en UTC, sumamos 2h para España
+        const d = new Date(fecha);
+        d.setHours(d.getHours() + 2);
+        fecha = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      }
+      fecha = String(fecha).trim();
+      if (!fecha || fecha === '') return;
+      if (!reservas[fecha]) reservas[fecha] = [];
+      reservas[fecha].push({ nombre, color: getColor(nombre) });
+    });
+  } catch(e) {
+    showToast('⚠️ Error al cargar datos');
+  }
+  hideSpinner();
+  renderCalendar();
+}
+
+async function callScript(params) {
+  const url = new URL(SCRIPT_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  return await res.json();
+}
+
+async function addReservas(fechas, nombre) {
+  showSpinner('Guardando ' + fechas.length + ' día' + (fechas.length > 1 ? 's' : '') + '...');
+  try {
+    const result = await callScript({
+      action: 'add',
+      fechas: fechas.join(','),
+      nombre: nombre,
+      color: getColor(nombre)
+    });
+    await cargarReservas();
+    if (result.ok) {
+      showToast('✓ ' + fechas.length + ' día' + (fechas.length > 1 ? 's reservados' : ' reservado'));
+    } else {
+      showToast('⚠️ Error al guardar');
+    }
+  } catch(e) {
+    hideSpinner();
+    showToast('⚠️ Error al guardar');
+  }
+}
+
+async function deleteReserva(fecha, nombre) {
+  showSpinner('Cancelando reserva...');
+  try {
+    await callScript({ action: 'delete', fecha, nombre });
+    await cargarReservas();
+    showToast('Reserva cancelada');
+  } catch(e) {
+    hideSpinner();
+    showToast('⚠️ Error al cancelar');
+  }
+}
+
+// ── INICIO ─────────────────────────────────────────────
+function entrar() {
+  const input = document.getElementById('name-input');
+  const name = input.value.trim();
+  if (!name) { input.focus(); input.style.borderColor = 'var(--terracota)'; return; }
+  userName = name;
+  localStorage.setItem('piso-abuela-nombre', name);
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  actualizarHeader();
+  cargarReservas();
+}
+
+document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+document.getElementById('admin-pass-input').addEventListener('keydown', e => { if (e.key === 'Enter') verificarAdmin(); });
+
+const nombreGuardado = localStorage.getItem('piso-abuela-nombre');
+if (nombreGuardado) document.getElementById('name-input').value = nombreGuardado;
+
+function cambiarNombre() {
+  const nuevo = prompt('¿Cuál es tu nombre?', userName);
+  if (nuevo && nuevo.trim()) {
+    userName = nuevo.trim();
+    localStorage.setItem('piso-abuela-nombre', userName);
+    actualizarHeader();
+    renderCalendar();
+  }
+}
+
+function actualizarHeader() {
+  document.getElementById('header-name').textContent = userName;
+  const avatar = document.getElementById('header-avatar');
+  avatar.textContent = userName.charAt(0).toUpperCase();
+  avatar.style.background = getColor(userName);
+}
+
+// ── SELECCIÓN MÚLTIPLE ─────────────────────────────────
+function toggleDia(dateKey, cell) {
+  if (diasSeleccionados.has(dateKey)) {
+    diasSeleccionados.delete(dateKey);
+    cell.classList.remove('selected');
+  } else {
+    diasSeleccionados.add(dateKey);
+    cell.classList.add('selected');
+  }
+  actualizarBarraSeleccion();
+}
+
+function actualizarBarraSeleccion() {
+  const n = diasSeleccionados.size;
+  const bar = document.getElementById('selection-bar');
+  const fab = document.getElementById('fab');
+  if (n > 0) {
+    bar.classList.add('active');
+    fab.classList.add('active');
+    document.getElementById('selection-label').textContent = n + ' día' + (n > 1 ? 's' : '') + ' seleccionado' + (n > 1 ? 's' : '');
+    fab.textContent = '✓ Reservar ' + n + ' día' + (n > 1 ? 's' : '');
+  } else {
+    bar.classList.remove('active');
+    fab.classList.remove('active');
+  }
+}
+
+function cancelarSeleccion() {
+  diasSeleccionados.clear();
+  document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+  actualizarBarraSeleccion();
+}
+
+async function reservarSeleccion() {
+  if (diasSeleccionados.size === 0) return;
+  const fechas = Array.from(diasSeleccionados);
+  cancelarSeleccion();
+  await addReservas(fechas, userName);
+}
+
+// ── CALENDARIO ─────────────────────────────────────────
+function cambiarMes(delta) {
+  cancelarSeleccion();
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('month-title').textContent = MESES[viewMonth] + ' ' + viewYear;
+  const activo = mesActivo(viewYear, viewMonth);
+  document.getElementById('mes-bloqueado-banner').style.display = activo ? 'none' : 'block';
+  renderLegend();
+  renderDays();
+}
+
+function renderLegend() {
+  const legend = document.getElementById('legend');
+  const people = {};
+  Object.values(reservas).forEach(list => list.forEach(r => { people[r.nombre.trim().toLowerCase()] = r.nombre; }));
+  legend.innerHTML = Object.entries(people).map(([k, name]) =>
+    '<div class="legend-item"><div class="legend-dot" style="background:' + getColor(name) + '"></div><span>' + name + '</span></div>'
+  ).join('');
+}
+
+function renderDays() {
+  const grid = document.getElementById('days-grid');
+  grid.innerHTML = '';
+  const lastDay = new Date(viewYear, viewMonth + 1, 0);
+  const today = new Date();
+  const startOffset = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+  const mesDisponible = mesActivo(viewYear, viewMonth);
+
+  for (let i = 0; i < startOffset; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'day-cell empty';
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const cell = document.createElement('div');
+    const dateKey = viewYear + '-' + String(viewMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const isPast = cellDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const isToday = cellDate.toDateString() === today.toDateString();
+    const isBlocked = !mesDisponible;
+    const isSelected = diasSeleccionados.has(dateKey);
+
+    cell.className = 'day-cell'
+      + (isPast ? ' past' : '')
+      + (isToday ? ' today' : '')
+      + (isBlocked && !isPast ? ' blocked' : '')
+      + (isSelected ? ' selected' : '');
+
+    const numDiv = document.createElement('div');
+    numDiv.className = 'day-number';
+    numDiv.textContent = d;
+    cell.appendChild(numDiv);
+
+    const lista = reservas[dateKey] || [];
+    const resList = document.createElement('div');
+    resList.className = 'reservas-list';
+
+    lista.forEach(r => {
+      const chip = document.createElement('div');
+      chip.className = 'reserva-chip';
+      chip.style.background = getColor(r.nombre);
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'chip-name';
+      nameSpan.textContent = r.nombre;
+      chip.appendChild(nameSpan);
+      if (r.nombre.trim().toLowerCase() === userName.trim().toLowerCase()) {
+        const del = document.createElement('span');
+        del.className = 'chip-del';
+        del.textContent = '×';
+        del.onclick = (e) => { e.stopPropagation(); deleteReserva(dateKey, r.nombre); };
+        chip.appendChild(del);
+      }
+      resList.appendChild(chip);
+    });
+
+    cell.appendChild(resList);
+
+    if (!isPast && !isBlocked) {
+      cell.addEventListener('click', (e) => {
+        // Si ya hay días seleccionados o tiene reservas propias: modo selección
+        if (diasSeleccionados.size > 0) {
+          toggleDia(dateKey, cell);
+        } else {
+          // Primer toque: abrir modal; si ya estaba seleccionado alternar
+          abrirModal(dateKey, d, cell);
+        }
+      });
+
+      // Pulsación larga → modo selección múltiple
+      let pressTimer;
+      cell.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => { toggleDia(dateKey, cell); }, 400);
+      }, { passive: true });
+      cell.addEventListener('touchend', () => clearTimeout(pressTimer), { passive: true });
+      cell.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+// ── MODAL ──────────────────────────────────────────────
+function abrirModal(dateKey, day, cell) {
+  selectedDay = dateKey;
+  const lista = reservas[dateKey] || [];
+  const yaEstoy = lista.some(r => r.nombre.trim().toLowerCase() === userName.trim().toLowerCase());
+
+  document.getElementById('modal-title').textContent = day + ' de ' + MESES[viewMonth];
+  document.getElementById('modal-date').textContent = viewYear;
+  document.getElementById('modal-ya-reservado').innerHTML = yaEstoy
+    ? '<div class="ya-reservado">✓ Ya tienes este día reservado</div>' : '';
+
+  const resEl = document.getElementById('modal-reservas');
+  if (lista.length === 0) {
+    resEl.innerHTML = '<p style="color:var(--text-light);font-size:0.88rem;text-align:center;padding:0.5rem 0">Nadie ha reservado este día aún.</p>';
+  } else {
+    resEl.innerHTML = lista.map(r => {
+      const esMio = r.nombre.trim().toLowerCase() === userName.trim().toLowerCase();
+      return '<div class="modal-reserva-item">'
+        + '<div class="dot" style="background:' + getColor(r.nombre) + '"></div>'
+        + '<span class="name">' + r.nombre + '</span>'
+        + (esMio ? '<button class="del-btn" onclick="deleteReserva(\'' + dateKey + '\',\'' + r.nombre + '\');cerrarModal()">Cancelar</button>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+  const btnRes = document.getElementById('btn-reservar');
+  btnRes.disabled = yaEstoy;
+  btnRes.textContent = yaEstoy ? '✓ Ya reservado' : '✓ Reservar este día';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('active');
+  selectedDay = null;
+}
+
+function confirmarReserva() {
+  if (!selectedDay) return;
+  const fecha = selectedDay;
+  cerrarModal();
+  addReservas([fecha], userName);
+}
+
+// ── ADMIN ──────────────────────────────────────────────
+function abrirAdmin() {
+  document.getElementById('admin-panel').classList.add('active');
+  document.getElementById('admin-login-wrap').style.display = 'block';
+  document.getElementById('admin-content').style.display = 'none';
+  document.getElementById('admin-pass-input').value = '';
+  document.getElementById('admin-error').style.display = 'none';
+  adminYear = viewYear;
+}
+
+function cerrarAdmin() { document.getElementById('admin-panel').classList.remove('active'); }
+
+function verificarAdmin() {
+  if (document.getElementById('admin-pass-input').value === ADMIN_PASS) {
+    document.getElementById('admin-login-wrap').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+    renderAdminMeses();
+  } else {
+    document.getElementById('admin-error').style.display = 'block';
+    document.getElementById('admin-pass-input').value = '';
+    document.getElementById('admin-pass-input').focus();
+  }
+}
+
+function cambiarAnioAdmin(delta) {
+  adminYear += delta;
+  renderAdminMeses();
+}
+
+function renderAdminMeses() {
+  document.getElementById('admin-year-label').textContent = adminYear;
+  document.getElementById('months-grid').innerHTML = MESES.map((nombre, i) => {
+    const activo = !!mesesActivos[mesClave(adminYear, i)];
+    return '<button class="month-toggle ' + (activo ? 'active' : '') + '" onclick="toggleMes(' + i + ')">' + nombre + '</button>';
+  }).join('');
+}
+
+function toggleMes(m) {
+  const clave = mesClave(adminYear, m);
+  if (mesesActivos[clave]) delete mesesActivos[clave]; else mesesActivos[clave] = true;
+  renderAdminMeses();
+}
+
+function guardarAdmin() {
+  localStorage.setItem('piso-abuela-meses', JSON.stringify(mesesActivos));
+  cerrarAdmin();
+  renderCalendar();
+  showToast('✓ Meses actualizados');
+}
+
+document.getElementById('admin-panel').addEventListener('click', function(e) {
+  if (e.target === this) cerrarAdmin();
+});
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
