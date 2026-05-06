@@ -440,7 +440,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWAvRvzVNEjaMKfnlgmpzA0PuKQ9-6RBVmen2ZQT1HlD11UA5-gv0MeM14oKwRVh7V/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4Apqxni6AxiBowsIEDj3ITr_1U8YMW0XQX5XqglNA8PsU8jIAwLEXdyHvnOzDVPFv/exec';
 const ADMIN_PASS = 'abuela2026';
 const COLORES = ['#c4714a','#5a7a5e','#7b68c8','#c47a9a','#4a8fa8','#d4a843','#8b6f5e','#5e8b6f','#a84a6b','#4a6ba8','#8bc47a','#c4a47a'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -522,11 +522,14 @@ async function callScript(params) {
 async function addReservas(fechas, nombre) {
   showSpinner('Guardando ' + fechas.length + ' día' + (fechas.length > 1 ? 's' : '') + '...');
   try {
+    const pinKey = 'pin-' + nombre.trim().toLowerCase();
+    const pin = localStorage.getItem(pinKey) || userPin || '';
     const result = await callScript({
       action: 'add',
       fechas: fechas.join(','),
       nombre: nombre,
-      color: getColor(nombre)
+      color: getColor(nombre),
+      pin: pin
     });
     await cargarReservas();
     if (result.ok) {
@@ -589,8 +592,6 @@ function entrar() {
     return;
   }
   localStorage.setItem(pinKey, pin);
-  // Guardar PIN en Google Sheets
-  callScript({ action: 'savepin', nombre: name, pin: pin }).catch(() => {});
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   actualizarHeader();
