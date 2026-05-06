@@ -588,6 +588,9 @@ function actualizarHeader() {
 
 // ── SELECCIÓN MÚLTIPLE ─────────────────────────────────
 function toggleDia(dateKey, cell) {
+  const lista2 = reservas[dateKey] || [];
+  const yaOcupado = lista2.length > 0 && !lista2.some(r => r.nombre.trim().toLowerCase() === userName.trim().toLowerCase());
+  if (yaOcupado) { showToast('🔒 Este día ya está reservado'); return; }
   if (diasSeleccionados.has(dateKey)) {
     diasSeleccionados.delete(dateKey);
     cell.classList.remove('selected');
@@ -674,11 +677,13 @@ function renderDays() {
     const isToday = cellDate.toDateString() === today.toDateString();
     const isBlocked = !mesDisponible;
     const isSelected = diasSeleccionados.has(dateKey);
+    const lista2 = reservas[dateKey] || [];
+    const yaOcupado = lista2.length > 0 && !lista2.some(r => r.nombre.trim().toLowerCase() === userName.trim().toLowerCase());
 
     cell.className = 'day-cell'
       + (isPast ? ' past' : '')
       + (isToday ? ' today' : '')
-      + (isBlocked && !isPast ? ' blocked' : '')
+      + ((isBlocked || yaOcupado) && !isPast ? ' blocked' : '')
       + (isSelected ? ' selected' : '');
 
     const numDiv = document.createElement('div');
@@ -759,9 +764,10 @@ function abrirModal(dateKey, day, cell) {
     }).join('');
   }
 
+  const ocupadoPorOtro = lista.length > 0 && !yaEstoy;
   const btnRes = document.getElementById('btn-reservar');
-  btnRes.disabled = yaEstoy;
-  btnRes.textContent = yaEstoy ? '✓ Ya reservado' : '✓ Reservar este día';
+  btnRes.disabled = yaEstoy || ocupadoPorOtro;
+  btnRes.textContent = yaEstoy ? '✓ Ya reservado' : ocupadoPorOtro ? '🔒 Día ocupado' : '✓ Reservar este día';
   document.getElementById('modal-overlay').classList.add('active');
 }
 
