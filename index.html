@@ -440,7 +440,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqZ15MwbR4UxMm5wHG74r82ybhE2g0UvWTPDP1K5_asg19sA_-zDioipotBEExjapI/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWAvRvzVNEjaMKfnlgmpzA0PuKQ9-6RBVmen2ZQT1HlD11UA5-gv0MeM14oKwRVh7V/exec';
 const ADMIN_PASS = 'abuela2026';
 const COLORES = ['#c4714a','#5a7a5e','#7b68c8','#c47a9a','#4a8fa8','#d4a843','#8b6f5e','#5e8b6f','#a84a6b','#4a6ba8','#8bc47a','#c4a47a'];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -589,6 +589,8 @@ function entrar() {
     return;
   }
   localStorage.setItem(pinKey, pin);
+  // Guardar PIN en Google Sheets
+  callScript({ action: 'savepin', nombre: name, pin: pin }).catch(() => {});
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   actualizarHeader();
