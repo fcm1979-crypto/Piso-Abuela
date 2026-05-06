@@ -946,10 +946,12 @@ function renderAdminReservas() {
   list.innerHTML = todasReservas.map(r => {
     const partes = r.fecha.split('-');
     const fechaLegible = partes[2] + '/' + partes[1] + '/' + partes[0];
+    const safeNombre = r.nombre.replace(/'/g, "\\'");
+    const safeFecha = r.fecha.replace(/'/g, "\\'");
     return '<div class="admin-reserva-row">'
       + '<div class="dot" style="background:' + getColor(r.nombre) + '"></div>'
       + '<div class="info"><strong>' + r.nombre + '</strong><span>' + fechaLegible + '</span></div>'
-      + '<button class="admin-del-btn" onclick="adminBorrarReserva('' + r.fecha + '','' + r.nombre + '')">× Borrar</button>'
+      + '<button class="admin-del-btn" onclick="adminBorrarReserva(\'' + safeFecha + '\',\'' + safeNombre + '\')">× Borrar</button>'
       + '</div>';
   }).join('');
 }
