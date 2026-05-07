@@ -654,14 +654,44 @@ if (nombreGuardado) {
   if (pinGuardado) document.getElementById('pin-input').value = pinGuardado;
 }
 
-function cambiarNombre() {
-  const nuevo = prompt('¿Cuál es tu nombre?', userName);
-  if (nuevo && nuevo.trim()) {
-    userName = nuevo.trim();
-    localStorage.setItem('piso-abuela-nombre', userName);
-    actualizarHeader();
-    renderCalendar();
+async function cambiarNombre() {
+  const nuevo = prompt('¿Cuál es tu nuevo nombre?', userName);
+  if (!nuevo || !nuevo.trim()) return;
+  const nuevoNombre = nuevo.trim();
+  if (nuevoNombre.toLowerCase() === userName.toLowerCase()) return;
+
+  // Verificar PIN del nombre actual antes de cambiar
+  const pinActual = prompt('Introduce tu PIN actual para confirmar el cambio:');
+  if (!pinActual) return;
+  showSpinner('Verificando PIN...');
+  try {
+    const result = await callScript({ action: 'checkpin', nombre: userName, pin: pinActual });
+    hideSpinner();
+    if (!result.ok) {
+      showToast('❌ PIN incorrecto');
+      return;
+    }
+  } catch(e) {
+    hideSpinner();
+    showToast('⚠️ Error al verificar PIN');
+    return;
   }
+
+  // Si el nuevo nombre ya tiene PIN en Sheets, pedir ese PIN también
+  const pinNuevo = prompt('Introduce el PIN de ' + nuevoNombre + ' (o tu nuevo PIN de 4 dígitos):');
+  if (!pinNuevo || !/^\d{4}$/.test(pinNuevo)) {
+    showToast('PIN inválido — debe ser 4 dígitos');
+    return;
+  }
+
+  userName = nuevoNombre;
+  userPin = pinNuevo;
+  const pinKey = 'pin-' + nuevoNombre.trim().toLowerCase();
+  localStorage.setItem('piso-abuela-nombre', nuevoNombre);
+  localStorage.setItem(pinKey, pinNuevo);
+  actualizarHeader();
+  renderCalendar();
+  showToast('✓ Nombre cambiado a ' + nuevoNombre);
 }
 
 function actualizarHeader() {
